@@ -62,6 +62,23 @@ Future CapsuleMap search features should document:
 - when indexes must be rebuilt
 - how to verify search quality after a model change
 
+### A Concrete Local Search Configuration
+
+CapsuleMap does not ship a search backend yet, but its roadmap is informed by a QMD-based local search setup.
+
+The useful parts of that setup are publishable as engineering constraints:
+
+- **Base tool**: QMD, a local markdown search tool.
+- **Keyword index**: SQLite FTS5 with a trigram tokenizer for CJK-friendly substring matching.
+- **Embedding model**: `multilingual-e5-large-instruct`, chosen over a smaller `embeddinggemma-300M` setup because multilingual recall and score separation were better in our tests.
+- **Query mode**: hybrid query, combining keyword and vector results.
+- **Fusion**: deterministic RRF-style score fusion.
+- **Query expansion**: disabled by default; a small local model generated noisy expansions for multilingual and short CJK queries.
+- **LLM reranking**: disabled by default; the latency cost was not justified by the quality gain in the tested workload.
+- **Short CJK fallback**: very short CJK queries need vector or alternate matching because trigram matching naturally starts at 3 characters.
+
+The important lesson is not the exact tool choice. The lesson is that local search needs a measurable configuration. Model names, index dimensions, query formatting, rebuild rules, and benchmark fixtures should be treated as part of the product surface.
+
 ### Hybrid Retrieval Often Beats One Ranking Method
 
 Keyword search, vector search, and model-based reranking each fail in different ways. A robust local system should prefer measurable ranking behavior over expensive model calls that look smart but add latency.

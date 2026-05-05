@@ -14,6 +14,18 @@ CapsuleMap turns a repository into a small set of files that a coding agent can 
 
 The goal is not to be another generic memory database. CapsuleMap is a handoff pack: it gives the next coding agent a concise, inspectable map of what to read, what might break, and which tests are likely relevant.
 
+## Why Agents Feel Faster
+
+CapsuleMap is designed to reduce three expensive loops: orientation, blast-radius analysis, and test selection.
+
+- **Spend less context budget**: agents read a capsule, module index, and impact map before pulling broad repo files into context.
+- **Start with the right files**: the first-read list tells the next agent where to look before it edits.
+- **Avoid random test selection**: the test map gives focused test hints before broad regression.
+- **Make handoff reviewable**: generated docs live in the repo, so humans can inspect the same context agents use.
+- **Keep benchmarks visible**: the local search setup behind the roadmap moved one hybrid query path from about 17s to about 4s, roughly 76% lower latency, with 5/5 top-1 results in a small validation set.
+
+Those numbers are not a universal productivity claim. They are the kind of measurable bottleneck CapsuleMap is built to expose: fewer wasted reads, fewer missed impact paths, and less repeated orientation work.
+
 ## What Makes It Different
 
 - **Repo-native by default**: the handoff pack lives in `docs/ai/`, so humans can review it and agents can read it without a hosted service.
