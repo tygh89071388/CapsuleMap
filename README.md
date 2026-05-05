@@ -47,6 +47,50 @@ node bin/capsulemap.mjs init .
 
 This writes the handoff pack to `docs/ai/`.
 
+## Use It On Your Own Repository
+
+CapsuleMap is not published to npm yet. For now, use it directly from the cloned repo.
+
+From the CapsuleMap checkout:
+
+```bash
+git clone https://github.com/tygh89071388/CapsuleMap.git
+cd CapsuleMap
+npm test
+```
+
+Then run the CLI against any repository:
+
+```bash
+node /path/to/CapsuleMap/bin/capsulemap.mjs init /path/to/your/repo
+node /path/to/CapsuleMap/bin/capsulemap.mjs check src/index.ts /path/to/your/repo
+node /path/to/CapsuleMap/bin/capsulemap.mjs prompt /path/to/your/repo
+```
+
+If you prefer a global command during local development:
+
+```bash
+cd /path/to/CapsuleMap
+npm link
+
+cd /path/to/your/repo
+capsulemap init .
+capsulemap check src/index.ts .
+capsulemap prompt .
+```
+
+Commit the generated `docs/ai/*` files when you want the handoff pack to travel with the repository. Keep them uncommitted if you only want a local agent briefing.
+
+Typical agent workflow:
+
+```text
+1. Run capsulemap init .
+2. Ask the coding agent to read docs/ai/PROJECT-CAPSULE.md first.
+3. Before editing a file, run capsulemap check <file> .
+4. Use docs/ai/TEST-MAP.json to choose focused tests.
+5. Update docs/ai/* again after major architecture or module changes.
+```
+
 Then ask CapsuleMap what to read before editing a file:
 
 ```bash

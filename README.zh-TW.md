@@ -69,6 +69,50 @@ node bin/capsulemap.mjs init .
 - `docs/ai/TEST-MAP.json`：source file 與 test file 的對映
 - `docs/ai/ARCHITECTURE-LANGUAGE.md`：交接與 review 時使用的一致架構語言
 
+## 用在自己的專案
+
+CapsuleMap 目前還沒有發布到 npm。現在最直接的方式，是 clone 這個 repo 後，用它的 CLI 去掃你的專案。
+
+先準備 CapsuleMap：
+
+```bash
+git clone https://github.com/tygh89071388/CapsuleMap.git
+cd CapsuleMap
+npm test
+```
+
+接著對任意 repo 執行：
+
+```bash
+node /path/to/CapsuleMap/bin/capsulemap.mjs init /path/to/your/repo
+node /path/to/CapsuleMap/bin/capsulemap.mjs check src/index.ts /path/to/your/repo
+node /path/to/CapsuleMap/bin/capsulemap.mjs prompt /path/to/your/repo
+```
+
+如果想在本機用全域指令：
+
+```bash
+cd /path/to/CapsuleMap
+npm link
+
+cd /path/to/your/repo
+capsulemap init .
+capsulemap check src/index.ts .
+capsulemap prompt .
+```
+
+如果希望接手資料跟著 repo 走，就把產生出的 `docs/ai/*` commit 進專案。如果只是臨時給 agent 看，也可以只留在本機不提交。
+
+建議 workflow：
+
+```text
+1. 執行 capsulemap init .
+2. 請 coding agent 先讀 docs/ai/PROJECT-CAPSULE.md。
+3. 改檔案前跑 capsulemap check <file> .。
+4. 用 docs/ai/TEST-MAP.json 選擇聚焦測試。
+5. 大改架構或模組後，再重新產生 docs/ai/*。
+```
+
 查某個檔案改動可能影響什麼：
 
 ```bash
