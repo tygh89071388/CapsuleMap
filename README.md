@@ -11,6 +11,7 @@ CapsuleMap turns a repository into a small set of files that a coding agent can 
 - `docs/ai/IMPACT-MAP.json` — imports, reverse imports, nearby tests, and risk rank per file.
 - `docs/ai/TEST-MAP.json` — source-to-test and test-to-source map.
 - `docs/ai/ARCHITECTURE-LANGUAGE.md` — shared vocabulary for handoff and review.
+- `docs/ai/SEARCH-GRAPH-ROADMAP.md` — the local search, relationship graph, and attention-gate roadmap behind the handoff strategy.
 
 The goal is not to be another generic memory database. CapsuleMap is a handoff pack: it gives the next coding agent a concise, inspectable map of what to read, what might break, and which tests are likely relevant.
 
@@ -32,7 +33,15 @@ Those numbers are not a universal productivity claim. They are the kind of measu
 - **Impact-aware**: CapsuleMap does not only summarize files. It also records reverse imports, likely tests, and file-level risk.
 - **Agent attention budget**: the output is intentionally small. It tells an agent what to read first instead of asking it to reread the entire repo.
 - **Local-first triage**: the judge can run with deterministic heuristics, or with an optional local model through Ollama.
-- **Designed from real handoff problems**: the roadmap is shaped by lessons from CJK search, hybrid retrieval, graph-based memory, and noisy context injection.
+- **Battle-tested origins**: the roadmap is distilled from a real agent workflow that uses QMD-style local markdown search, relationship graphs, and strict attention gates to keep context useful instead of noisy.
+
+## Battle-Tested Origins
+
+CapsuleMap is distilled from an agent workflow that uses local markdown search, relationship graphs, and attention gates in daily coding handoffs.
+
+The public 0.1 release does not bundle that whole system. Instead, it exposes the part every repo can use immediately: a reviewable handoff pack plus a clear contract for future search and graph adapters.
+
+Read [Search, Graph, and Attention Roadmap](docs/SEARCH-GRAPH-ROADMAP.md) for the concrete QMD-style search setup, CJK retrieval lessons, relationship graph contract, and attention-gate rules behind the roadmap.
 
 ## Quick Start
 
@@ -52,6 +61,7 @@ One-off use without adding a dependency:
 npm exec --yes --package capsulemap -- capsulemap init .
 npm exec --yes --package capsulemap -- capsulemap check src/index.ts .
 npm exec --yes --package capsulemap -- capsulemap prompt .
+npm exec --yes --package capsulemap -- capsulemap roadmap .
 ```
 
 Install it globally if you want a regular `capsulemap` command:
@@ -61,6 +71,7 @@ npm install -g capsulemap
 capsulemap init .
 capsulemap check src/index.ts .
 capsulemap prompt .
+capsulemap roadmap .
 ```
 
 Install it as a dev dependency when you want every contributor or agent to use the same version:
@@ -70,6 +81,7 @@ npm install --save-dev capsulemap
 npm exec capsulemap -- init .
 npm exec capsulemap -- check src/index.ts .
 npm exec capsulemap -- prompt .
+npm exec capsulemap -- roadmap .
 ```
 
 Commit the generated `docs/ai/*` files when you want the handoff pack to travel with the repository. Keep them uncommitted if you only want a local agent briefing.
@@ -81,7 +93,8 @@ Typical agent workflow:
 2. Ask the coding agent to read docs/ai/PROJECT-CAPSULE.md first.
 3. Before editing a file, run capsulemap check <file> .
 4. Use docs/ai/TEST-MAP.json to choose focused tests.
-5. Update docs/ai/* again after major architecture or module changes.
+5. Read docs/ai/SEARCH-GRAPH-ROADMAP.md when the task involves search, memory, graph, retrieval, or context injection.
+6. Update docs/ai/* again after major architecture or module changes.
 ```
 
 Then ask CapsuleMap what to read before editing a file:
@@ -94,6 +107,12 @@ Render a handoff prompt for a coding agent:
 
 ```bash
 capsulemap prompt .
+```
+
+Print the search / graph / attention roadmap without writing files:
+
+```bash
+capsulemap roadmap .
 ```
 
 ## Why This Exists
@@ -147,6 +166,9 @@ capsulemap check src/index.ts .
 # Render a handoff prompt for an agent
 capsulemap prompt .
 
+# Print the search / graph / attention roadmap
+capsulemap roadmap .
+
 # Triage a task with the local judge
 capsulemap judge "fix the dispatch tests"
 ```
@@ -163,16 +185,20 @@ capsulemap judge "fix the dispatch tests"
 
 `docs/ai/ARCHITECTURE-LANGUAGE.md` keeps shared naming stable during handoff and review.
 
+`docs/ai/SEARCH-GRAPH-ROADMAP.md` explains how local search, relationship graphs, and attention gates can plug into the handoff pack without turning it into an opaque memory service.
+
 ## Design Notes
 
 Read [Design Notes](docs/DESIGN-NOTES.md) for the design lessons behind CapsuleMap, including why the preview starts with a file-level handoff pack and how search, embeddings, relationship graphs, and attention budgets may fit into future versions.
+
+For the deeper search and graph direction, read [Search, Graph, and Attention Roadmap](docs/SEARCH-GRAPH-ROADMAP.md).
 
 ## Architecture
 
 ```text
 bin/capsulemap.mjs
   -> src/project-scan.mjs  scan files, imports, reverse imports, tests
-  -> src/writer.mjs        write docs/ai and render prompts
+  -> src/writer.mjs        write docs/ai, render prompts, render roadmap
   -> src/local-judge.mjs   heuristic or optional Ollama triage
 ```
 
@@ -188,6 +214,7 @@ Implemented:
 - file-level impact map
 - test map
 - handoff prompt rendering
+- search / graph / attention roadmap rendering
 - local heuristic judge
 - optional Ollama judge
 
@@ -195,6 +222,8 @@ Not included yet:
 
 - MCP server
 - symbol-level call graph
+- bundled QMD or vector search adapter
+- built-in relationship graph database
 - automatic git hooks
 - cloud memory backend
 

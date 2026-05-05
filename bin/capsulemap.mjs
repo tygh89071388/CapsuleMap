@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { judgeTask } from "../src/local-judge.mjs";
 import { scanProject } from "../src/project-scan.mjs";
-import { renderHandoffPrompt, writeHandoffPack } from "../src/writer.mjs";
+import { renderHandoffPrompt, renderSearchGraphRoadmap, writeHandoffPack } from "../src/writer.mjs";
 
 function usage() {
   return `CapsuleMap
@@ -13,6 +13,7 @@ Usage:
   capsulemap scan [projectRoot] [--json]
   capsulemap check <file> [projectRoot]
   capsulemap prompt [projectRoot]
+  capsulemap roadmap [projectRoot]
   capsulemap judge <task text>
 `;
 }
@@ -98,6 +99,11 @@ async function main(argv) {
 
   if (command === "prompt") {
     print(renderHandoffPrompt(args[0] || "."));
+    return;
+  }
+
+  if (command === "roadmap") {
+    print(renderSearchGraphRoadmap(scanProject(args[0] || ".")));
     return;
   }
 

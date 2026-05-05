@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { judgeTask } from "../src/local-judge.mjs";
 import { scanProject } from "../src/project-scan.mjs";
-import { writeHandoffPack } from "../src/writer.mjs";
+import { renderSearchGraphRoadmap, writeHandoffPack } from "../src/writer.mjs";
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "capsulemap-"));
@@ -39,16 +39,29 @@ test("scanProject ignores shebang when building summaries", () => {
   assert.equal(scan.impactMap.files["bin/tool.mjs"].summary, "tool CLI command module.");
 });
 
-test("writeHandoffPack writes the five agent docs", () => {
+test("writeHandoffPack writes the six agent docs", () => {
   const root = fixture();
   const scan = scanProject(root);
   const result = writeHandoffPack(scan, root);
 
-  assert.equal(result.files.length, 5);
+  assert.equal(result.files.length, 6);
   const capsule = readFileSync(join(root, "docs", "ai", "PROJECT-CAPSULE.md"), "utf8");
   assert.match(capsule, /First Reads For Agents/);
+  const roadmap = readFileSync(join(root, "docs", "ai", "SEARCH-GRAPH-ROADMAP.md"), "utf8");
+  assert.match(roadmap, /QMD-style local markdown search/);
+  assert.match(roadmap, /Attention Gate/);
   const testMap = JSON.parse(readFileSync(join(root, "docs", "ai", "TEST-MAP.json"), "utf8"));
   assert.deepEqual(testMap.bySource["src/index.js"], ["tests/index.test.js"]);
+});
+
+test("renderSearchGraphRoadmap describes search graph and attention layers", () => {
+  const root = fixture();
+  const scan = scanProject(root);
+  const roadmap = renderSearchGraphRoadmap(scan);
+
+  assert.match(roadmap, /Local Search & Graph Roadmap/);
+  assert.match(roadmap, /Relationship Graph Adapter/);
+  assert.match(roadmap, /multilingual-e5-large-instruct/);
 });
 
 test("judgeTask uses deterministic local triage by default", async () => {
@@ -69,4 +82,7 @@ test("CLI init and check work on a fixture repo", () => {
   const checkOutput = execFileSync("node", [cli, "check", "src/index.js", root], { encoding: "utf8" });
   assert.match(checkOutput, /Risk:/);
   assert.match(checkOutput, /tests\/index.test.js/);
+
+  const roadmapOutput = execFileSync("node", [cli, "roadmap", root], { encoding: "utf8" });
+  assert.match(roadmapOutput, /QMD-style local markdown search/);
 });

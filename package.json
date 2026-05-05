@@ -1,6 +1,6 @@
 {
   "name": "capsulemap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Repo-native handoff maps for coding agents.",
   "type": "module",
   "license": "MIT",
@@ -26,6 +26,8 @@
     "src/",
     "docs/DESIGN-NOTES.md",
     "docs/DESIGN-NOTES.zh-TW.md",
+    "docs/SEARCH-GRAPH-ROADMAP.md",
+    "docs/SEARCH-GRAPH-ROADMAP.zh-TW.md",
     "README.zh-TW.md"
   ],
   "bin": {
