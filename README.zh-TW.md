@@ -55,10 +55,7 @@ repo files
 需要 Node.js 20 或更新版本。
 
 ```bash
-git clone https://github.com/tygh89071388/CapsuleMap.git
-cd CapsuleMap
-npm test
-node bin/capsulemap.mjs init .
+npm exec --yes --package capsulemap -- capsulemap init .
 ```
 
 執行後會產生 `docs/ai/`：
@@ -71,34 +68,30 @@ node bin/capsulemap.mjs init .
 
 ## 用在自己的專案
 
-CapsuleMap 目前還沒有發布到 npm。現在最直接的方式，是 clone 這個 repo 後，用它的 CLI 去掃你的專案。
-
-先準備 CapsuleMap：
+不想加入依賴，可以直接用 npm one-off 執行：
 
 ```bash
-git clone https://github.com/tygh89071388/CapsuleMap.git
-cd CapsuleMap
-npm test
+npm exec --yes --package capsulemap -- capsulemap init .
+npm exec --yes --package capsulemap -- capsulemap check src/index.ts .
+npm exec --yes --package capsulemap -- capsulemap prompt .
 ```
 
-接著對任意 repo 執行：
+如果想在本機有固定 `capsulemap` 指令：
 
 ```bash
-node /path/to/CapsuleMap/bin/capsulemap.mjs init /path/to/your/repo
-node /path/to/CapsuleMap/bin/capsulemap.mjs check src/index.ts /path/to/your/repo
-node /path/to/CapsuleMap/bin/capsulemap.mjs prompt /path/to/your/repo
-```
-
-如果想在本機用全域指令：
-
-```bash
-cd /path/to/CapsuleMap
-npm link
-
-cd /path/to/your/repo
+npm install -g capsulemap
 capsulemap init .
 capsulemap check src/index.ts .
 capsulemap prompt .
+```
+
+如果希望團隊或 coding agent 固定使用同一版：
+
+```bash
+npm install --save-dev capsulemap
+npm exec capsulemap -- init .
+npm exec capsulemap -- check src/index.ts .
+npm exec capsulemap -- prompt .
 ```
 
 如果希望接手資料跟著 repo 走，就把產生出的 `docs/ai/*` commit 進專案。如果只是臨時給 agent 看，也可以只留在本機不提交。
@@ -116,19 +109,19 @@ capsulemap prompt .
 查某個檔案改動可能影響什麼：
 
 ```bash
-node bin/capsulemap.mjs check src/project-scan.mjs .
+capsulemap check src/project-scan.mjs .
 ```
 
 產生給 coding agent 的接手 prompt：
 
 ```bash
-node bin/capsulemap.mjs prompt .
+capsulemap prompt .
 ```
 
 用本地判斷器分流任務：
 
 ```bash
-node bin/capsulemap.mjs judge "continue the refactor"
+capsulemap judge "continue the refactor"
 ```
 
 ## 設計筆記
@@ -142,7 +135,7 @@ CapsuleMap 內建 deterministic heuristic，預設不需要任何模型或網路
 如果你有 Ollama，也可以啟用本地模型判斷器：
 
 ```bash
-CAPSULEMAP_LOCAL_JUDGE=ollama CAPSULEMAP_OLLAMA_MODEL=gemma4:e2b node bin/capsulemap.mjs judge "continue the refactor"
+CAPSULEMAP_LOCAL_JUDGE=ollama CAPSULEMAP_OLLAMA_MODEL=gemma4:e2b capsulemap judge "continue the refactor"
 ```
 
 這個 judge 的用途是分流，不是裁決。它可以協助判斷任務像是：

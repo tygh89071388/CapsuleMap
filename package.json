@@ -5,12 +5,34 @@
   "type": "module",
   "license": "MIT",
   "author": "CapsuleMap contributors",
+  "homepage": "https://github.com/tygh89071388/CapsuleMap#readme",
+  "bugs": {
+    "url": "https://github.com/tygh89071388/CapsuleMap/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tygh89071388/CapsuleMap.git"
+    "url": "git+https://github.com/tygh89071388/CapsuleMap.git"
   },
+  "keywords": [
+    "ai",
+    "coding-agent",
+    "handoff",
+    "codemap",
+    "local-first",
+    "developer-tools"
+  ],
+  "files": [
+    "bin/",
+    "src/",
+    "docs/DESIGN-NOTES.md",
+    "docs/DESIGN-NOTES.zh-TW.md",
+    "README.zh-TW.md"
+  ],
   "bin": {
-    "capsulemap": "./bin/capsulemap.mjs"
+    "capsulemap": "bin/capsulemap.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "check": "node --check bin/capsulemap.mjs && node --check src/local-judge.mjs && node --check src/project-scan.mjs && node --check src/writer.mjs",

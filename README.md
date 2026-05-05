@@ -36,47 +36,40 @@ Those numbers are not a universal productivity claim. They are the kind of measu
 
 ## Quick Start
 
-Clone the repository and run the CLI with Node.js 20 or newer:
+Run it in any repository with Node.js 20 or newer:
 
 ```bash
-git clone https://github.com/tygh89071388/CapsuleMap.git
-cd CapsuleMap
-npm test
-node bin/capsulemap.mjs init .
+npm exec --yes --package capsulemap -- capsulemap init .
 ```
 
 This writes the handoff pack to `docs/ai/`.
 
 ## Use It On Your Own Repository
 
-CapsuleMap is not published to npm yet. For now, use it directly from the cloned repo.
-
-From the CapsuleMap checkout:
+One-off use without adding a dependency:
 
 ```bash
-git clone https://github.com/tygh89071388/CapsuleMap.git
-cd CapsuleMap
-npm test
+npm exec --yes --package capsulemap -- capsulemap init .
+npm exec --yes --package capsulemap -- capsulemap check src/index.ts .
+npm exec --yes --package capsulemap -- capsulemap prompt .
 ```
 
-Then run the CLI against any repository:
+Install it globally if you want a regular `capsulemap` command:
 
 ```bash
-node /path/to/CapsuleMap/bin/capsulemap.mjs init /path/to/your/repo
-node /path/to/CapsuleMap/bin/capsulemap.mjs check src/index.ts /path/to/your/repo
-node /path/to/CapsuleMap/bin/capsulemap.mjs prompt /path/to/your/repo
-```
-
-If you prefer a global command during local development:
-
-```bash
-cd /path/to/CapsuleMap
-npm link
-
-cd /path/to/your/repo
+npm install -g capsulemap
 capsulemap init .
 capsulemap check src/index.ts .
 capsulemap prompt .
+```
+
+Install it as a dev dependency when you want every contributor or agent to use the same version:
+
+```bash
+npm install --save-dev capsulemap
+npm exec capsulemap -- init .
+npm exec capsulemap -- check src/index.ts .
+npm exec capsulemap -- prompt .
 ```
 
 Commit the generated `docs/ai/*` files when you want the handoff pack to travel with the repository. Keep them uncommitted if you only want a local agent briefing.
@@ -94,13 +87,13 @@ Typical agent workflow:
 Then ask CapsuleMap what to read before editing a file:
 
 ```bash
-node bin/capsulemap.mjs check src/project-scan.mjs .
+capsulemap check src/project-scan.mjs .
 ```
 
 Render a handoff prompt for a coding agent:
 
 ```bash
-node bin/capsulemap.mjs prompt .
+capsulemap prompt .
 ```
 
 ## Why This Exists
@@ -131,7 +124,7 @@ The judge is meant for triage, not authority:
 Enable Ollama only when you want it:
 
 ```bash
-CAPSULEMAP_LOCAL_JUDGE=ollama CAPSULEMAP_OLLAMA_MODEL=gemma4:e2b node bin/capsulemap.mjs judge "continue the refactor"
+CAPSULEMAP_LOCAL_JUDGE=ollama CAPSULEMAP_OLLAMA_MODEL=gemma4:e2b capsulemap judge "continue the refactor"
 ```
 
 Without those variables, CapsuleMap uses local heuristics only.
@@ -140,22 +133,22 @@ Without those variables, CapsuleMap uses local heuristics only.
 
 ```bash
 # Build docs/ai for the current repo
-node bin/capsulemap.mjs init .
+capsulemap init .
 
 # Print a scan summary
-node bin/capsulemap.mjs scan .
+capsulemap scan .
 
 # JSON scan output
-node bin/capsulemap.mjs scan . --json
+capsulemap scan . --json
 
 # Ask what a changed file may affect
-node bin/capsulemap.mjs check src/index.ts .
+capsulemap check src/index.ts .
 
 # Render a handoff prompt for an agent
-node bin/capsulemap.mjs prompt .
+capsulemap prompt .
 
 # Triage a task with the local judge
-node bin/capsulemap.mjs judge "fix the dispatch tests"
+capsulemap judge "fix the dispatch tests"
 ```
 
 ## What It Generates
