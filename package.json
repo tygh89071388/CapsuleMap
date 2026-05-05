@@ -1,0 +1,23 @@
+{
+  "name": "capsulemap",
+  "version": "0.1.0",
+  "description": "Repo-native handoff maps for coding agents.",
+  "type": "module",
+  "license": "MIT",
+  "author": "CapsuleMap contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tygh89071388/CapsuleMap.git"
+  },
+  "bin": {
+    "capsulemap": "./bin/capsulemap.mjs"
+  },
+  "scripts": {
+    "check": "node --check bin/capsulemap.mjs && node --check src/local-judge.mjs && node --check src/project-scan.mjs && node --check src/writer.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "demo": "node bin/capsulemap.mjs init . && node bin/capsulemap.mjs prompt ."
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
