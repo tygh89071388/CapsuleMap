@@ -8,7 +8,9 @@ CapsuleMap turns a repository into a small set of files that a coding agent can 
 
 - `docs/ai/PROJECT-CAPSULE.md` — current project summary, entrypoints, hot spots, and first-read guidance.
 - `docs/ai/MODULE-INDEX.md` — file-level module map grouped by role.
+- `docs/ai/SYMBOL-INDEX.md` — compact definition index for functions, classes, interfaces, types, enums, and exported constants.
 - `docs/ai/IMPACT-MAP.json` — imports, reverse imports, nearby tests, and risk rank per file.
+- `docs/ai/SYMBOL-MAP.json` — machine-readable symbol map used by `capsulemap symbol` and `capsulemap symbols`.
 - `docs/ai/TEST-MAP.json` — source-to-test and test-to-source map.
 - `docs/ai/ARCHITECTURE-LANGUAGE.md` — shared vocabulary for handoff and review.
 - `docs/ai/SEARCH-GRAPH-ROADMAP.md` — the local search, relationship graph, and attention-gate roadmap behind the handoff strategy.
@@ -31,6 +33,7 @@ Those numbers are not a universal productivity claim. They are the kind of measu
 
 - **Repo-native by default**: the handoff pack lives in `docs/ai/`, so humans can review it and agents can read it without a hosted service.
 - **Impact-aware**: CapsuleMap does not only summarize files. It also records reverse imports, likely tests, and file-level risk.
+- **Symbol-aware without overclaiming**: it can locate definitions by function/class/type name, but it does not pretend to be a full call graph.
 - **Agent attention budget**: the output is intentionally small. It tells an agent what to read first instead of asking it to reread the entire repo.
 - **Local-first triage**: the judge can run with deterministic heuristics, or with an optional local model through Ollama.
 - **Battle-tested origins**: the roadmap is distilled from a real agent workflow that uses QMD-style local markdown search, relationship graphs, and strict attention gates to keep context useful instead of noisy.
@@ -60,6 +63,8 @@ One-off use without adding a dependency:
 ```bash
 npm exec --yes --package capsulemap -- capsulemap init .
 npm exec --yes --package capsulemap -- capsulemap check src/index.ts .
+npm exec --yes --package capsulemap -- capsulemap symbol main .
+npm exec --yes --package capsulemap -- capsulemap symbols src/index.ts .
 npm exec --yes --package capsulemap -- capsulemap prompt .
 npm exec --yes --package capsulemap -- capsulemap roadmap .
 ```
@@ -70,6 +75,8 @@ Install it globally if you want a regular `capsulemap` command:
 npm install -g capsulemap
 capsulemap init .
 capsulemap check src/index.ts .
+capsulemap symbol main .
+capsulemap symbols src/index.ts .
 capsulemap prompt .
 capsulemap roadmap .
 ```
@@ -80,6 +87,8 @@ Install it as a dev dependency when you want every contributor or agent to use t
 npm install --save-dev capsulemap
 npm exec capsulemap -- init .
 npm exec capsulemap -- check src/index.ts .
+npm exec capsulemap -- symbol main .
+npm exec capsulemap -- symbols src/index.ts .
 npm exec capsulemap -- prompt .
 npm exec capsulemap -- roadmap .
 ```
@@ -92,15 +101,23 @@ Typical agent workflow:
 1. Run capsulemap init .
 2. Ask the coding agent to read docs/ai/PROJECT-CAPSULE.md first.
 3. Before editing a file, run capsulemap check <file> .
-4. Use docs/ai/TEST-MAP.json to choose focused tests.
-5. Read docs/ai/SEARCH-GRAPH-ROADMAP.md when the task involves search, memory, graph, retrieval, or context injection.
-6. Update docs/ai/* again after major architecture or module changes.
+4. If you know a function, class, interface, or type name, run capsulemap symbol <name-or-regex> .
+5. Use docs/ai/TEST-MAP.json to choose focused tests.
+6. Read docs/ai/SEARCH-GRAPH-ROADMAP.md when the task involves search, memory, graph, retrieval, or context injection.
+7. Update docs/ai/* again after major architecture or module changes.
 ```
 
 Then ask CapsuleMap what to read before editing a file:
 
 ```bash
 capsulemap check src/project-scan.mjs .
+```
+
+Find a definition by name:
+
+```bash
+capsulemap symbol scanProject .
+capsulemap symbols src/project-scan.mjs .
 ```
 
 Render a handoff prompt for a coding agent:
@@ -163,6 +180,10 @@ capsulemap scan . --json
 # Ask what a changed file may affect
 capsulemap check src/index.ts .
 
+# Find definitions without reading broad files
+capsulemap symbol main .
+capsulemap symbols src/index.ts .
+
 # Render a handoff prompt for an agent
 capsulemap prompt .
 
@@ -179,7 +200,11 @@ capsulemap judge "fix the dispatch tests"
 
 `docs/ai/MODULE-INDEX.md` groups indexed files by role so an agent can orient quickly.
 
+`docs/ai/SYMBOL-INDEX.md` gives a compact human-readable definition index. It points agents to `capsulemap symbol` instead of loading the machine map.
+
 `docs/ai/IMPACT-MAP.json` records imports, reverse imports, related tests, and file-level risk.
+
+`docs/ai/SYMBOL-MAP.json` records definition-level symbols for precise CLI lookup. Do not paste the full JSON file into an agent prompt.
 
 `docs/ai/TEST-MAP.json` links source files and nearby tests.
 
@@ -198,11 +223,11 @@ For the deeper search and graph direction, read [Search, Graph, and Attention Ro
 ```text
 bin/capsulemap.mjs
   -> src/project-scan.mjs  scan files, imports, reverse imports, tests
-  -> src/writer.mjs        write docs/ai, render prompts, render roadmap
+  -> src/writer.mjs        write docs/ai, render prompts, render symbol index and roadmap
   -> src/local-judge.mjs   heuristic or optional Ollama triage
 ```
 
-CapsuleMap is intentionally file-level in this preview. It does not try to replace a symbol graph, IDE index, or full RAG system.
+CapsuleMap is intentionally conservative in this preview. It includes definition-level symbol lookup, but it does not try to replace a call graph, IDE index, or full RAG system.
 
 ## Current Scope
 
@@ -212,6 +237,7 @@ Implemented:
 - relative JS/TS import resolution
 - simple Python import extraction
 - file-level impact map
+- definition-level symbol map
 - test map
 - handoff prompt rendering
 - search / graph / attention roadmap rendering

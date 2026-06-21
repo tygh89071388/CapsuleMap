@@ -52,6 +52,11 @@ function sortObject(object) {
   );
 }
 
+function compactSignature(signature, maxChars = 180) {
+  const collapsed = signature.replace(/\s+/g, " ").trim();
+  return collapsed.length <= maxChars ? collapsed : `${collapsed.slice(0, maxChars - 3)}...`;
+}
+
 function isSupported(filePath) {
   return SUPPORTED_EXTENSIONS.has(extname(filePath).toLowerCase());
 }
@@ -203,6 +208,74 @@ function riskRank(importedByCount, nearbyTestsCount, category) {
   return "low";
 }
 
+function addSymbol(symbols, seen, entry) {
+  if (!entry.name) return;
+  const key = `${entry.name}:${entry.kind}:${entry.line}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  symbols.push({ ...entry, signature: compactSignature(entry.signature) });
+}
+
+function extractSymbols(path, source) {
+  const extension = extname(path).toLowerCase();
+  const cleanSource = source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/^\s*#.*$/gm, "");
+  const lines = cleanSource.split(/\r?\n/);
+  const symbols = [];
+  const seen = new Set();
+
+  const scanLines = patterns => {
+    lines.forEach((rawLine, index) => {
+      const line = rawLine.trim();
+      if (!line) return;
+      for (const item of patterns) {
+        if (!item.exported && /^\s/.test(rawLine)) continue;
+        const match = line.match(item.pattern);
+        const name = match?.[1]?.trim();
+        if (!name) continue;
+        addSymbol(symbols, seen, {
+          name,
+          kind: item.kind,
+          line: index + 1,
+          exported: item.exported ?? /\bexport\b/.test(line),
+          signature: line,
+        });
+        return;
+      }
+    });
+  };
+
+  if (extension === ".py") {
+    scanLines([
+      { pattern: /^class\s+([A-Za-z_]\w*)\s*[:(]/, kind: "class", exported: true },
+      { pattern: /^(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(/, kind: "function", exported: true },
+    ]);
+    return symbols;
+  }
+
+  if (/\.(mjs|cjs|js|jsx|ts|tsx)$/.test(path)) {
+    scanLines([
+      { pattern: /^export\s+(?:declare\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/, kind: "function", exported: true },
+      { pattern: /^export\s+(?:declare\s+)?class\s+([A-Za-z_$][\w$]*)\b/, kind: "class", exported: true },
+      { pattern: /^export\s+(?:declare\s+)?interface\s+([A-Za-z_$][\w$]*)\b/, kind: "interface", exported: true },
+      { pattern: /^export\s+(?:declare\s+)?type\s+([A-Za-z_$][\w$]*)\b/, kind: "type", exported: true },
+      { pattern: /^export\s+(?:declare\s+)?enum\s+([A-Za-z_$][\w$]*)\b/, kind: "enum", exported: true },
+      { pattern: /^export\s+(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/, kind: "const", exported: true },
+      { pattern: /^export\s+default\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/, kind: "function", exported: true },
+      { pattern: /^export\s+default\s+class\s+([A-Za-z_$][\w$]*)\b/, kind: "class", exported: true },
+      { pattern: /^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/, kind: "function" },
+      { pattern: /^class\s+([A-Za-z_$][\w$]*)\b/, kind: "class" },
+      { pattern: /^interface\s+([A-Za-z_$][\w$]*)\b/, kind: "interface" },
+      { pattern: /^type\s+([A-Za-z_$][\w$]*)\b/, kind: "type" },
+      { pattern: /^enum\s+([A-Za-z_$][\w$]*)\b/, kind: "enum" },
+    ]);
+  }
+
+  return symbols;
+}
+
 export function scanProject(projectRoot = ".") {
   const root = resolve(projectRoot);
   const files = collectFiles(root);
@@ -265,6 +338,28 @@ export function scanProject(projectRoot = ".") {
     byTest[test] = importsByFile[test]?.filter(imported => !isTestFile(imported)) ?? [];
   }
 
+  const symbolEntries = {};
+  const byFileSymbols = {};
+  for (const file of files) {
+    const source = readFileSync(join(root, file), "utf8");
+    const ids = [];
+    for (const raw of extractSymbols(file, source)) {
+      const id = `${file}#${raw.name}`;
+      if (symbolEntries[id]) continue;
+      ids.push(id);
+      symbolEntries[id] = {
+        id,
+        name: raw.name,
+        kind: raw.kind,
+        path: file,
+        line: raw.line,
+        exported: raw.exported,
+        signature: raw.signature,
+      };
+    }
+    if (ids.length > 0) byFileSymbols[file] = ids;
+  }
+
   const generatedAt = new Date().toISOString();
   return {
     generatedAt,
@@ -283,6 +378,12 @@ export function scanProject(projectRoot = ".") {
       repoName: basename(root),
       bySource: sortObject(bySource),
       byTest: sortObject(byTest),
+    },
+    symbolMap: {
+      generatedAt,
+      repoName: basename(root),
+      symbols: sortObject(symbolEntries),
+      byFile: sortObject(byFileSymbols),
     },
   };
 }

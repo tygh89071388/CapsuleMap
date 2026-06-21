@@ -27,6 +27,9 @@ test("scanProject builds source, import, and test relationships", () => {
   assert.deepEqual(scan.impactMap.files["src/index.js"].imports, ["src/util.js"]);
   assert.deepEqual(scan.impactMap.files["src/index.js"].nearbyTests, ["tests/index.test.js"]);
   assert.deepEqual(scan.testMap.byTest["tests/index.test.js"], ["src/index.js"]);
+  assert.equal(scan.symbolMap.symbols["src/index.js#main"].name, "main");
+  assert.equal(scan.symbolMap.symbols["src/index.js#main"].line, 2);
+  assert.deepEqual(scan.symbolMap.byFile["src/index.js"], ["src/index.js#main"]);
 });
 
 test("scanProject ignores shebang when building summaries", () => {
@@ -39,14 +42,19 @@ test("scanProject ignores shebang when building summaries", () => {
   assert.equal(scan.impactMap.files["bin/tool.mjs"].summary, "tool CLI command module.");
 });
 
-test("writeHandoffPack writes the six agent docs", () => {
+test("writeHandoffPack writes the agent docs including symbols", () => {
   const root = fixture();
   const scan = scanProject(root);
   const result = writeHandoffPack(scan, root);
 
-  assert.equal(result.files.length, 6);
+  assert.equal(result.files.length, 8);
   const capsule = readFileSync(join(root, "docs", "ai", "PROJECT-CAPSULE.md"), "utf8");
   assert.match(capsule, /First Reads For Agents/);
+  assert.match(capsule, /capsulemap symbol/);
+  const symbolIndex = readFileSync(join(root, "docs", "ai", "SYMBOL-INDEX.md"), "utf8");
+  assert.match(symbolIndex, /main/);
+  const symbolMap = JSON.parse(readFileSync(join(root, "docs", "ai", "SYMBOL-MAP.json"), "utf8"));
+  assert.equal(symbolMap.symbols["src/util.js#add"].kind, "function");
   const roadmap = readFileSync(join(root, "docs", "ai", "SEARCH-GRAPH-ROADMAP.md"), "utf8");
   assert.match(roadmap, /QMD-style local markdown search/);
   assert.match(roadmap, /Attention Gate/);
@@ -82,6 +90,14 @@ test("CLI init and check work on a fixture repo", () => {
   const checkOutput = execFileSync("node", [cli, "check", "src/index.js", root], { encoding: "utf8" });
   assert.match(checkOutput, /Risk:/);
   assert.match(checkOutput, /tests\/index.test.js/);
+
+  const symbolOutput = execFileSync("node", [cli, "symbol", "main", root], { encoding: "utf8" });
+  assert.match(symbolOutput, /src\/index.js:2/);
+  assert.match(symbolOutput, /tests=index.test.js|tests\/index.test.js/);
+
+  const symbolsOutput = execFileSync("node", [cli, "symbols", "src/util.js", root], { encoding: "utf8" });
+  assert.match(symbolsOutput, /add/);
+  assert.match(symbolsOutput, /line=1/);
 
   const roadmapOutput = execFileSync("node", [cli, "roadmap", root], { encoding: "utf8" });
   assert.match(roadmapOutput, /QMD-style local markdown search/);

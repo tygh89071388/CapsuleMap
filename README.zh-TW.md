@@ -71,7 +71,9 @@ npm exec --yes --package capsulemap -- capsulemap init .
 
 - `docs/ai/PROJECT-CAPSULE.md`：專案摘要、入口檔、熱點檔案、agent first-read 指引
 - `docs/ai/MODULE-INDEX.md`：依角色整理的檔案級模組索引
+- `docs/ai/SYMBOL-INDEX.md`：函式、class、interface、type、enum、exported const 的精簡定義索引
 - `docs/ai/IMPACT-MAP.json`：imports、reverse imports、相關測試、檔案風險
+- `docs/ai/SYMBOL-MAP.json`：給 `capsulemap symbol` / `capsulemap symbols` 查詢用的機器可讀 symbol map
 - `docs/ai/TEST-MAP.json`：source file 與 test file 的對映
 - `docs/ai/ARCHITECTURE-LANGUAGE.md`：交接與 review 時使用的一致架構語言
 - `docs/ai/SEARCH-GRAPH-ROADMAP.md`：本地搜尋、關係圖譜、attention gate 的公開整合路線
@@ -83,6 +85,8 @@ npm exec --yes --package capsulemap -- capsulemap init .
 ```bash
 npm exec --yes --package capsulemap -- capsulemap init .
 npm exec --yes --package capsulemap -- capsulemap check src/index.ts .
+npm exec --yes --package capsulemap -- capsulemap symbol main .
+npm exec --yes --package capsulemap -- capsulemap symbols src/index.ts .
 npm exec --yes --package capsulemap -- capsulemap prompt .
 npm exec --yes --package capsulemap -- capsulemap roadmap .
 ```
@@ -93,6 +97,8 @@ npm exec --yes --package capsulemap -- capsulemap roadmap .
 npm install -g capsulemap
 capsulemap init .
 capsulemap check src/index.ts .
+capsulemap symbol main .
+capsulemap symbols src/index.ts .
 capsulemap prompt .
 capsulemap roadmap .
 ```
@@ -103,6 +109,8 @@ capsulemap roadmap .
 npm install --save-dev capsulemap
 npm exec capsulemap -- init .
 npm exec capsulemap -- check src/index.ts .
+npm exec capsulemap -- symbol main .
+npm exec capsulemap -- symbols src/index.ts .
 npm exec capsulemap -- prompt .
 npm exec capsulemap -- roadmap .
 ```
@@ -115,15 +123,23 @@ npm exec capsulemap -- roadmap .
 1. 執行 capsulemap init .
 2. 請 coding agent 先讀 docs/ai/PROJECT-CAPSULE.md。
 3. 改檔案前跑 capsulemap check <file> .。
-4. 用 docs/ai/TEST-MAP.json 選擇聚焦測試。
-5. 任務涉及搜尋、記憶、圖譜、檢索或上下文注入時，讀 docs/ai/SEARCH-GRAPH-ROADMAP.md。
-6. 大改架構或模組後，再重新產生 docs/ai/*。
+4. 如果已知函式、class、interface 或 type 名稱，先跑 capsulemap symbol <name-or-regex> .。
+5. 用 docs/ai/TEST-MAP.json 選擇聚焦測試。
+6. 任務涉及搜尋、記憶、圖譜、檢索或上下文注入時，讀 docs/ai/SEARCH-GRAPH-ROADMAP.md。
+7. 大改架構或模組後，再重新產生 docs/ai/*。
 ```
 
 查某個檔案改動可能影響什麼：
 
 ```bash
 capsulemap check src/project-scan.mjs .
+```
+
+用名稱查定義位置：
+
+```bash
+capsulemap symbol scanProject .
+capsulemap symbols src/project-scan.mjs .
 ```
 
 產生給 coding agent 的接手 prompt：
@@ -175,11 +191,11 @@ CAPSULEMAP_LOCAL_JUDGE=ollama CAPSULEMAP_OLLAMA_MODEL=gemma4:e2b capsulemap judg
 ```text
 bin/capsulemap.mjs
   -> src/project-scan.mjs  scan files, imports, reverse imports, tests
-  -> src/writer.mjs        write docs/ai, render prompts, render roadmap
+  -> src/writer.mjs        write docs/ai, render prompts, render symbol index and roadmap
   -> src/local-judge.mjs   heuristic or optional Ollama triage
 ```
 
-目前 MVP 是 file-level map，不做 symbol-level call graph，也不取代 IDE index。
+目前 MVP 是 file-level map 加 definition-level symbol lookup；不做 symbol-level call graph，也不取代 IDE index。
 
 ## 目前支援
 
@@ -189,6 +205,7 @@ bin/capsulemap.mjs
 - relative JS/TS import resolution
 - simple Python import extraction
 - file-level impact map
+- definition-level symbol map
 - test map
 - handoff prompt rendering
 - search / graph / attention roadmap rendering

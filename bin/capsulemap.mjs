@@ -12,6 +12,8 @@ Usage:
   capsulemap init [projectRoot]
   capsulemap scan [projectRoot] [--json]
   capsulemap check <file> [projectRoot]
+  capsulemap symbol <name-or-regex> [projectRoot]
+  capsulemap symbols <file> [projectRoot]
   capsulemap prompt [projectRoot]
   capsulemap roadmap [projectRoot]
   capsulemap judge <task text>
@@ -67,6 +69,57 @@ function checkFile(fileArg, rootArg = ".") {
   ].join("\n");
 }
 
+function loadOrScanMaps(root) {
+  const impactPath = join(root, "docs", "ai", "IMPACT-MAP.json");
+  const testPath = join(root, "docs", "ai", "TEST-MAP.json");
+  const symbolPath = join(root, "docs", "ai", "SYMBOL-MAP.json");
+  if (existsSync(impactPath) && existsSync(testPath) && existsSync(symbolPath)) {
+    return {
+      impactMap: loadJson(impactPath),
+      testMap: loadJson(testPath),
+      symbolMap: loadJson(symbolPath),
+    };
+  }
+  const scan = scanProject(root);
+  return {
+    impactMap: scan.impactMap,
+    testMap: scan.testMap,
+    symbolMap: scan.symbolMap,
+  };
+}
+
+function symbolSearch(patternArg, rootArg = ".") {
+  const root = resolve(rootArg);
+  const { impactMap, symbolMap } = loadOrScanMaps(root);
+  const pattern = new RegExp(patternArg, "i");
+  const rows = Object.values(symbolMap.symbols)
+    .filter(symbol => pattern.test(symbol.name) || pattern.test(symbol.id) || pattern.test(symbol.signature))
+    .sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line || left.name.localeCompare(right.name));
+
+  const lines = [`Symbol "${patternArg}": ${rows.length} match${rows.length === 1 ? "" : "es"}`];
+  for (const symbol of rows.slice(0, 30)) {
+    const file = impactMap.files[symbol.path];
+    const tests = file?.nearbyTests?.length ? file.nearbyTests.join(", ") : "none";
+    lines.push(`- ${symbol.name} | ${symbol.kind} | ${symbol.path}:${symbol.line} | risk=${file?.riskRank ?? "unknown"} | tests=${tests} | ${symbol.signature}`);
+  }
+  if (rows.length > 30) lines.push(`- ... ${rows.length - 30} more matches hidden`);
+  return lines.join("\n");
+}
+
+function symbolsInFile(fileArg, rootArg = ".") {
+  const root = resolve(rootArg);
+  const relativeFile = fileArg.replace(/\\/g, "/").replace(/^\.\//, "");
+  const { symbolMap } = loadOrScanMaps(root);
+  const ids = symbolMap.byFile[relativeFile] ?? [];
+  const lines = [`Symbols in ${relativeFile}: ${ids.length}`];
+  for (const id of ids) {
+    const symbol = symbolMap.symbols[id];
+    if (!symbol) continue;
+    lines.push(`- ${symbol.name} | ${symbol.kind} | line=${symbol.line} | exported=${symbol.exported} | ${symbol.signature}`);
+  }
+  return lines.join("\n");
+}
+
 async function main(argv) {
   const [command, ...args] = argv;
 
@@ -94,6 +147,18 @@ async function main(argv) {
   if (command === "check") {
     if (!args[0]) throw new Error("Missing file path for check command.");
     print(checkFile(args[0], args[1] || "."));
+    return;
+  }
+
+  if (command === "symbol") {
+    if (!args[0]) throw new Error("Missing name or regex for symbol command.");
+    print(symbolSearch(args[0], args[1] || "."));
+    return;
+  }
+
+  if (command === "symbols") {
+    if (!args[0]) throw new Error("Missing file path for symbols command.");
+    print(symbolsInFile(args[0], args[1] || "."));
     return;
   }
 
